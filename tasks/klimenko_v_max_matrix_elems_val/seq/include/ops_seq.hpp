@@ -18,7 +18,6 @@ class KlimenkoVMaxMatrixElemsValSEQ : public BaseTask {
 
  private:
   std::vector<std::vector<int>> matrix_;
-  int max_val_ = 0;
 };
 
 }  // namespace klimenko_v_max_matrix_elems_val

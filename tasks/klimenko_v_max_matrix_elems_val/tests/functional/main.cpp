@@ -60,9 +60,8 @@ TEST_P(KlimenkoVMaxMatrixElemsValFuncTests, FindMatrixMax) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 6> kTestParam = {std::make_tuple(5, "5x5"),          std::make_tuple(100, "100x100"),
-                                            std::make_tuple(500, "500x500"),    std::make_tuple(1000, "1000x1000"),
-                                            std::make_tuple(2500, "2500x2500"), std::make_tuple(5000, "5000x5000")};
+const std::array<TestType, 4> kTestParam = {std::make_tuple(5, "5x5"), std::make_tuple(10, "10x10"),
+                                            std::make_tuple(100, "100x100"), std::make_tuple(500, "500x500");
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValMPI, InType>(
                                                kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val),

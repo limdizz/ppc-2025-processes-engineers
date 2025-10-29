@@ -17,8 +17,16 @@ KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) :
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::ValidationImpl() {
-  const auto &matrix = GetInput();
-  return !matrix.empty() && !matrix[0].empty();
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // Только процесс 0 проверяет входные данные
+  if (rank == 0) {
+    const auto &matrix = GetInput();
+    return !matrix.empty() && !matrix[0].empty();
+  }
+
+  return true;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {

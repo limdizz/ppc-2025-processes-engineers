@@ -16,6 +16,9 @@ class KlimenkoVMaxMatrixElemsValMPI : public BaseTask {
   bool PreProcessingImpl() override;
   bool RunImpl() override;
   bool PostProcessingImpl() override;
+
+ private:
+  std::vector<std::vector<int>> matrix_;
 };
 
 }  // namespace klimenko_v_max_matrix_elems_val

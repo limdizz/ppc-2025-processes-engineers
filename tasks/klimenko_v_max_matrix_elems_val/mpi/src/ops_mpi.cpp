@@ -10,7 +10,7 @@
 
 namespace klimenko_v_max_matrix_elems_val {
 
-KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) : Task() {
+KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) : matrix_(in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;
@@ -50,11 +50,8 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
 
   int global_max = std::numeric_limits<int>::min();
 
-  MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-
-  if (rank == 0) {
-    GetOutput() = global_max;
-  }
+  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  GetOutput() = global_max;
 
   MPI_Barrier(MPI_COMM_WORLD);
   return true;

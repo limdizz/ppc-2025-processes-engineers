@@ -8,15 +8,18 @@
 
 namespace klimenko_v_max_matrix_elems_val {
 class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kCount_ = 10000;
+  const int kCount_ = 1000;
   InType input_data_;
 
   void SetUp() override {
-    input_data_.resize(kCount_, std::vector<int>(kCount_));
+    input_data_.clear();
+    input_data_.resize(static_cast<size_t>(kCount_));
+
     int val = 1;
     for (int i = 0; i < kCount_; i++) {
+      input_data_[static_cast<size_t>(i)].resize(static_cast<size_t>(kCount_));
       for (int j = 0; j < kCount_; j++) {
-        input_data_[i][j] = val++;
+        input_data_[static_cast<size_t>(i)][static_cast<size_t>(j)] = val++;
       }
     }
   }

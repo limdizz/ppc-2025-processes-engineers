@@ -39,20 +39,19 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int global_max = std::numeric_limits<int>::min();
-
+  int local_max = std::numeric_limits<int>::min();
   if (rank == 0) {
     const auto &matrix = GetInput();
-
     for (const auto &row : matrix) {
       if (!row.empty()) {
         int row_max = *std::max_element(row.begin(), row.end());
-        global_max = std::max(global_max, row_max);
+        local_max = std::max(local_max, row_max);
       }
     }
   }
 
-  MPI_Bcast(&global_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  int global_max = std::numeric_limits<int>::min();
+  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   GetOutput() = global_max;
   return true;

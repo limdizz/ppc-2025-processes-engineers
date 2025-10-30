@@ -35,37 +35,24 @@ bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
-  const auto &matrix = GetInput();
   int rank = 0, size = 1;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n_rows = static_cast<int>(matrix.size());
+  int global_max = std::numeric_limits<int>::min();
 
-  int base_rows = n_rows / size;
-  int extra_rows = n_rows % size;
+  if (rank == 0) {
+    const auto &matrix = GetInput();
 
-  int local_rows = base_rows + (rank < extra_rows ? 1 : 0);
-  int start_row = rank * base_rows + std::min(rank, extra_rows);
-  int end_row = start_row + local_rows;
-
-  int local_max = std::numeric_limits<int>::min();
-
-  if (local_rows > 0 && start_row < n_rows) {
-    for (int i = start_row; i < end_row && i < n_rows; i++) {
-      if (!matrix[i].empty()) {
-        int row_max = *std::max_element(matrix[i].begin(), matrix[i].end());
-        local_max = std::max(local_max, row_max);
+    for (const auto &row : matrix) {
+      if (!row.empty()) {
+        int row_max = *std::max_element(row.begin(), row.end());
+        global_max = std::max(global_max, row_max);
       }
     }
   }
 
-  if (local_rows == 0) {
-    local_max = std::numeric_limits<int>::min();
-  }
-
-  int global_max = std::numeric_limits<int>::min();
-  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Bcast(&global_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   GetOutput() = global_max;
   return true;

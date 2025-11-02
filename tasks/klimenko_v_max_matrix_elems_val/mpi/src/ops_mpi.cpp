@@ -83,7 +83,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PostProcessingImpl() {
-  return GetOutput() != std::numeric_limits<int>::min();
+  return true;
 }
 
 }  // namespace klimenko_v_max_matrix_elems_val

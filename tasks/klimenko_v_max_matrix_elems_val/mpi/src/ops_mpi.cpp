@@ -28,7 +28,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   const std::vector<int> &inputVec = GetInput();
 
-  int pid, pCount;
+  int pid = 0, pCount = 1;
   MPI_Comm_rank(MPI_COMM_WORLD, &pid);
   MPI_Comm_size(MPI_COMM_WORLD, &pCount);
 
@@ -41,7 +41,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
     int baseSize = elemsCount / pCount;
     int remainder = elemsCount % pCount;
     int step = 0;
-    for (int i = 0; i < pCount; i++) {
+    for (int i = 0; i < pCount; ++i) {
       sizes[i] = baseSize + (i < remainder ? 1 : 0);
       offsets[i] = step;
       step += sizes[i];
@@ -54,13 +54,17 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   int localSize = sizes[pid];
   std::vector<int> localData(localSize);
 
-  MPI_Scatterv(inputVec.data(), sizes.data(), offsets.data(), MPI_INT, localData.data(), localSize, MPI_INT, 0,
-               MPI_COMM_WORLD);
+  const int *sendbuf = (pid == 0 && !inputVec.empty()) ? inputVec.data() : nullptr;
+  int *recvbuf = (localSize > 0) ? localData.data() : nullptr;
 
-  int localMax =
-      localData.empty() ? std::numeric_limits<int>::min() : *std::max_element(localData.begin(), localData.end());
+  MPI_Scatterv(sendbuf, sizes.data(), offsets.data(), MPI_INT, recvbuf, localSize, MPI_INT, 0, MPI_COMM_WORLD);
 
-  int globalMax = 0;
+  int localMax = std::numeric_limits<int>::min();
+  if (localSize > 0) {
+    localMax = *std::max_element(localData.begin(), localData.end());
+  }
+
+  int globalMax = std::numeric_limits<int>::min();
   MPI_Reduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(&globalMax, 1, MPI_INT, 0, MPI_COMM_WORLD);

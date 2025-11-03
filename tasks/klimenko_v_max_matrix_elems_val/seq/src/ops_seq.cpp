@@ -11,15 +11,11 @@ namespace klimenko_v_max_matrix_elems_val {
 KlimenkoVMaxMatrixElemsValSEQ::KlimenkoVMaxMatrixElemsValSEQ(const InType &in) : matrix_(in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = 0;
+  GetOutput() = std::numeric_limits<int>::min();
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::ValidationImpl() {
-  const auto &matrix = GetInput();
-  if (matrix.empty() || matrix[0].empty()) {
-    return false;
-  }
-  return true;
+  return !GetInput().empty();
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::PreProcessingImpl() {
@@ -28,22 +24,17 @@ bool KlimenkoVMaxMatrixElemsValSEQ::PreProcessingImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::RunImpl() {
-  const auto &matrix = GetInput();
-  int global_max = std::numeric_limits<int>::min();
-
-  for (const auto &row : matrix) {
-    auto row_max = *std::max_element(row.begin(), row.end());
-    if (row_max > global_max) {
-      global_max = row_max;
-    }
+  const auto &data = GetInput();
+  if (data.empty()) {
+    return false;
   }
 
-  GetOutput() = global_max;
+  GetOutput() = *std::max_element(data.begin(), data.end());
   return true;
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::PostProcessingImpl() {
-  return GetOutput() != std::numeric_limits<int>::min();
+  return true;
 }
 
 }  // namespace klimenko_v_max_matrix_elems_val

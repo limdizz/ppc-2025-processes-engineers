@@ -17,7 +17,7 @@ class KlimenkoVMaxMatrixElemsValSEQ : public BaseTask {
   bool PostProcessingImpl() override;
 
  private:
-  std::vector<std::vector<int>> matrix_;
+  InType matrix_;
 };
 
 }  // namespace klimenko_v_max_matrix_elems_val

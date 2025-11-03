@@ -13,15 +13,11 @@ namespace klimenko_v_max_matrix_elems_val {
 KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) : matrix_(in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = 0;
+  GetOutput() = std::numeric_limits<int>::min();
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::ValidationImpl() {
-  const auto &matrix = GetInput();
-  if (matrix.empty() || matrix[0].empty()) {
-    return false;
-  }
-  return true;
+  return !GetInput().empty();
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
@@ -30,28 +26,20 @@ bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
-  const std::vector<std::vector<int>> &inputMatrix = GetInput();
+  const std::vector<int> &inputVec = GetInput();
 
   int pid, pCount;
   MPI_Comm_rank(MPI_COMM_WORLD, &pid);
   MPI_Comm_size(MPI_COMM_WORLD, &pCount);
 
-  std::vector<int> flatMatrix;
-  int totalElems = 0;
-  if (pid == 0) {
-    for (const auto &row : inputMatrix) {
-      flatMatrix.insert(flatMatrix.end(), row.begin(), row.end());
-    }
-    totalElems = static_cast<int>(flatMatrix.size());
-  }
-
-  MPI_Bcast(&totalElems, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  int elemsCount = static_cast<int>(inputVec.size());
 
   std::vector<int> sizes(pCount);
   std::vector<int> offsets(pCount);
+
   if (pid == 0) {
-    int baseSize = totalElems / pCount;
-    int remainder = totalElems % pCount;
+    int baseSize = elemsCount / pCount;
+    int remainder = elemsCount % pCount;
     int step = 0;
     for (int i = 0; i < pCount; i++) {
       sizes[i] = baseSize + (i < remainder ? 1 : 0);
@@ -66,7 +54,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   int localSize = sizes[pid];
   std::vector<int> localData(localSize);
 
-  MPI_Scatterv(flatMatrix.data(), sizes.data(), offsets.data(), MPI_INT, localData.data(), localSize, MPI_INT, 0,
+  MPI_Scatterv(inputVec.data(), sizes.data(), offsets.data(), MPI_INT, localData.data(), localSize, MPI_INT, 0,
                MPI_COMM_WORLD);
 
   int localMax =

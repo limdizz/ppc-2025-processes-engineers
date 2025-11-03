@@ -40,7 +40,6 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   int elems_per_proc = total_elems / size;
   int remainder = total_elems % size;
 
-  int start_idx = rank * elems_per_proc + std::min(rank, remainder);
   int local_count = elems_per_proc + (rank < remainder ? 1 : 0);
 
   std::vector<int> local_data(local_count);

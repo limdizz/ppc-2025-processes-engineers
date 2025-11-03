@@ -14,15 +14,11 @@ KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) :
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = std::numeric_limits<int>::min();
+  ;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::ValidationImpl() {
-  int pid = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &pid);
-  if (pid == 0) {
-    return !GetInput().empty();
-  }
-  return true;
+  return !GetInput().empty();
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
@@ -31,56 +27,59 @@ bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
-  const std::vector<int> &inputVec = GetInput();
+  const std::vector<int> &matrix = GetInput();
 
-  int pid = 0, pCount = 1;
-  MPI_Comm_rank(MPI_COMM_WORLD, &pid);
-  MPI_Comm_size(MPI_COMM_WORLD, &pCount);
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int elemsCount = static_cast<int>(inputVec.size());
+  int total_elems = static_cast<int>(matrix.size());
 
-  std::vector<int> sizes(pCount);
-  std::vector<int> offsets(pCount);
+  // Определяем количество элементов для каждого процесса
+  int elems_per_proc = total_elems / size;
+  int remainder = total_elems % size;
 
-  if (pid == 0) {
-    int baseSize = elemsCount / pCount;
-    int remainder = elemsCount % pCount;
-    int step = 0;
-    for (int i = 0; i < pCount; ++i) {
-      sizes[i] = baseSize + (i < remainder ? 1 : 0);
-      offsets[i] = step;
-      step += sizes[i];
+  int start_idx = rank * elems_per_proc + std::min(rank, remainder);
+  int local_count = elems_per_proc + (rank < remainder ? 1 : 0);
+
+  std::vector<int> local_data(local_count);
+  if (rank == 0) {
+    // Формируем counts и displacements
+    std::vector<int> counts(size);
+    std::vector<int> displs(size);
+
+    for (int i = 0; i < size; i++) {
+      counts[i] = elems_per_proc + (i < remainder ? 1 : 0);
+      displs[i] = i * elems_per_proc + std::min(i, remainder);
     }
+
+    // Рассылаем данные
+    MPI_Scatterv(matrix.data(), counts.data(), displs.data(), MPI_INT, local_data.data(), local_count, MPI_INT, 0,
+                 MPI_COMM_WORLD);
+  } else {
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT, local_data.data(), local_count, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
-  MPI_Bcast(sizes.data(), pCount, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(offsets.data(), pCount, MPI_INT, 0, MPI_COMM_WORLD);
-
-  int localSize = sizes[pid];
-  std::vector<int> localData(localSize);
-
-  const int *sendbuf = (pid == 0 && !inputVec.empty()) ? inputVec.data() : nullptr;
-  int *recvbuf = (localSize > 0) ? localData.data() : nullptr;
-
-  MPI_Scatterv(sendbuf, sizes.data(), offsets.data(), MPI_INT, recvbuf, localSize, MPI_INT, 0, MPI_COMM_WORLD);
-
-  int localMax = std::numeric_limits<int>::min();
-  if (localSize > 0) {
-    localMax = *std::max_element(localData.begin(), localData.end());
+  // Находим локальный максимум
+  int local_max = std::numeric_limits<int>::min();
+  for (int val : local_data) {
+    local_max = std::max(local_max, val);
   }
 
-  int globalMax = std::numeric_limits<int>::min();
-  MPI_Reduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+  // Глобальное объединение максимумов
+  int global_max = std::numeric_limits<int>::min();
+  MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  MPI_Bcast(&globalMax, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  // Передаем результат всем
+  MPI_Bcast(&global_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  GetOutput() = globalMax;
-
+  GetOutput() = global_max;
   return true;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PostProcessingImpl() {
-  return true;
+  return GetOutput() != std::numeric_limits<int>::min();
 }
 
 }  // namespace klimenko_v_max_matrix_elems_val

@@ -27,50 +27,46 @@ bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
-  const std::vector<int> &matrix = GetInput();
-
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int total_elems = static_cast<int>(matrix.size());
+  int total_elems = 0;
+  if (rank == 0) {
+    total_elems = static_cast<int>(GetInput().size());
+  }
 
-  // Определяем количество элементов для каждого процесса
+  MPI_Bcast(&total_elems, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (total_elems <= 0) {
+    GetOutput() = std::numeric_limits<int>::min();
+    return false;
+  }
+
+  std::vector<int> full_matrix;
+  if (rank == 0) {
+    full_matrix = GetInput();
+  } else {
+    full_matrix.resize(total_elems);
+  }
+
+  MPI_Bcast(full_matrix.data(), total_elems, MPI_INT, 0, MPI_COMM_WORLD);
+
   int elems_per_proc = total_elems / size;
   int remainder = total_elems % size;
 
+  int start_idx = rank * elems_per_proc + std::min(rank, remainder);
   int local_count = elems_per_proc + (rank < remainder ? 1 : 0);
+  int end_idx = start_idx + local_count;
 
-  std::vector<int> local_data(local_count);
-  if (rank == 0) {
-    // Формируем counts и displacements
-    std::vector<int> counts(size);
-    std::vector<int> displs(size);
-
-    for (int i = 0; i < size; i++) {
-      counts[i] = elems_per_proc + (i < remainder ? 1 : 0);
-      displs[i] = i * elems_per_proc + std::min(i, remainder);
-    }
-
-    // Рассылаем данные
-    MPI_Scatterv(matrix.data(), counts.data(), displs.data(), MPI_INT, local_data.data(), local_count, MPI_INT, 0,
-                 MPI_COMM_WORLD);
-  } else {
-    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT, local_data.data(), local_count, MPI_INT, 0, MPI_COMM_WORLD);
-  }
-
-  // Находим локальный максимум
   int local_max = std::numeric_limits<int>::min();
-  for (int val : local_data) {
-    local_max = std::max(local_max, val);
+  for (int idx = start_idx; idx < end_idx; ++idx) {
+    local_max = std::max(local_max, full_matrix[idx]);
   }
 
-  // Глобальное объединение максимумов
   int global_max = std::numeric_limits<int>::min();
   MPI_Reduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
 
-  // Передаем результат всем
   MPI_Bcast(&global_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   GetOutput() = global_max;

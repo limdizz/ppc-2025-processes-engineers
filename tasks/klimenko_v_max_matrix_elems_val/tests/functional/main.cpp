@@ -31,9 +31,10 @@ class KlimenkoVMaxMatrixElemsValFuncTests : public ppc::util::BaseRunFuncTests<I
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     const int n = std::get<0>(params);
 
-    input_data_.resize(n, std::vector<int>(n));
+    input_data_.resize(n);
     int val = 1;
     for (int i = 0; i < n; i++) {
+      input_data_[i].resize(n);
       for (int j = 0; j < n; j++) {
         input_data_[i][j] = val++;
       }

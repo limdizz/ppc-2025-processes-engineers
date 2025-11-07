@@ -10,7 +10,7 @@ namespace klimenko_v_max_matrix_elems_val {
 
 KlimenkoVMaxMatrixElemsValSEQ::KlimenkoVMaxMatrixElemsValSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
-  GetInput() = in;
+  GetInput() = InType(in);
   GetOutput() = 0;
 }
 

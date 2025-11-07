@@ -12,7 +12,7 @@ class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<I
   InType input_data_;
 
   void SetUp() override {
-    input_data_.resize(kCount_, std::vector<int>(kCount_));
+    input_data_.resize(kCount_);
     int val = 1;
     for (int i = 0; i < kCount_; i++) {
       for (int j = 0; j < kCount_; j++) {

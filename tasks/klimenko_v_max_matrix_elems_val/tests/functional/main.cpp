@@ -23,27 +23,25 @@ namespace klimenko_v_max_matrix_elems_val {
 class KlimenkoVMaxMatrixElemsValFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
-    return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
+    return "Size_" + std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
   }
 
  protected:
   void SetUp() override {
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
-    const int n = std::get<0>(params);
+    int size = std::get<0>(params);
 
-    input_data_.resize(n);
-    int val = 1;
-    for (int i = 0; i < n; i++) {
-      input_data_[i].resize(n);
-      for (int j = 0; j < n; j++) {
-        input_data_[i][j] = val++;
-      }
-    }
-    expected_max_ = n * n;
+    input_data_ = GenerateTestMatrix(size);
+    reference_max_ = CalculateReferenceMax(input_data_);
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return output_data == expected_max_;
+    // Всегда проверяем результат для всех типов задач
+    bool result_correct = (output_data == reference_max_);
+    if (!result_correct) {
+      std::cout << "Expected " << reference_max_ << ", got " << output_data << "\n";
+    }
+    return result_correct;
   }
 
   InType GetTestInputData() final {
@@ -52,27 +50,98 @@ class KlimenkoVMaxMatrixElemsValFuncTests : public ppc::util::BaseRunFuncTests<I
 
  private:
   InType input_data_;
-  OutType expected_max_ = 0;
+  OutType reference_max_ = 0;
+
+  static OutType CalculateReferenceMax(const InType &matrix) {
+    if (matrix.empty()) {
+      return 0;
+    }
+
+    OutType max_val = matrix[0][0];
+    for (const auto &row : matrix) {
+      for (int val : row) {
+        max_val = std::max(val, max_val);
+      }
+    }
+    return max_val;
+  }
 };
 
 namespace {
 
-TEST_P(KlimenkoVMaxMatrixElemsValFuncTests, FindMatrixMax) {
+TEST_P(KlimenkoVMaxMatrixElemsValFuncTests, TestFindMaxElement) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 3> kTestParam = {std::make_tuple(3, "3"), std::make_tuple(5, "5"), std::make_tuple(7, "7")};
+// Тестовые случаи
+const std::array<TestType, 5> kTestParam = {std::make_tuple(7, "7x7"), std::make_tuple(20, "20x20"),
+                                            std::make_tuple(50, "50x50"), std::make_tuple(100, "100x100"),
+                                            std::make_tuple(11, "11x11")};
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValMPI, InType>(
-                                               kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val),
+                                               kTestParam, PPC_SETTINGS_moskaev_v_max_value_elem_matrix),
                                            ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValSEQ, InType>(
-                                               kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val));
+                                               kTestParam, PPC_SETTINGS_moskaev_v_max_value_elem_matrix));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = KlimenkoVMaxMatrixElemsValFuncTests::PrintFuncTestName<KlimenkoVMaxMatrixElemsValFuncTests>;
+const auto kFuncTestName = KlimenkoVMaxMatrixElemsValFuncTests::PrintFuncTestName<KlimenkoVMaxMatrixElemsValFuncTests>;
 
-INSTANTIATE_TEST_SUITE_P(MatrixFuncTests, KlimenkoVMaxMatrixElemsValFuncTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(FuncTests, KlimenkoVMaxMatrixElemsValFuncTests, kGtestValues, kFuncTestName);
+
+// Индивидуальные тест кейсы
+
+TEST(KlimenkoVMaxMatrixElemsValFuncTestsMPI, testZeroMatrix) {
+  int initialized = 0;
+  MPI_Initialized(&initialized);
+  if (initialized == 0) {
+    MPI_Init(nullptr, nullptr);
+  }
+  auto matrix = GenerateTestMatrix(0);
+  KlimenkoVMaxMatrixElemsValMPI task(matrix);
+
+  EXPECT_FALSE(task.Validation());
+
+  EXPECT_FALSE(task.PreProcessing());
+  EXPECT_FALSE(task.Run());
+  EXPECT_FALSE(task.PostProcessing());
+}
+
+TEST(KlimenkoVMaxMatrixElemsValFuncTestsSEQ, testZeroMatrix) {
+  auto matrix = GenerateTestMatrix(0);
+  KlimenkoVMaxMatrixElemsValSEQ task(matrix);
+
+  EXPECT_FALSE(task.Validation());
+
+  EXPECT_FALSE(task.PreProcessing());
+  EXPECT_FALSE(task.Run());
+  EXPECT_FALSE(task.PostProcessing());
+}
+
+TEST(KlimenkoVMaxMatrixElemsValFuncTestsMPI, testSmallMatrix) {
+  int initialized = 0;
+  MPI_Initialized(&initialized);
+  if (initialized == 0) {
+    MPI_Init(nullptr, nullptr);
+  }
+  auto matrix = GenerateTestMatrix(30);
+  KlimenkoVMaxMatrixElemsValMPI task(matrix);
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_GT(task.GetOutput(), 0);
+}
+
+TEST(KlimenkoVMaxMatrixElemsValFuncTestsSEQ, testSmallMatrix) {
+  auto matrix = GenerateTestMatrix(30);
+  KlimenkoVMaxMatrixElemsValSEQ task(matrix);
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_GT(task.GetOutput(), 0);
+}
 
 }  // namespace
 

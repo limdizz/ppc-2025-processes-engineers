@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <mpi.h>
 #include <stb/stb_image.h>
 
 #include <algorithm>
@@ -6,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <numeric>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -19,6 +21,26 @@
 #include "util/include/util.hpp"
 
 namespace klimenko_v_max_matrix_elems_val {
+
+static InType GenerateTestMatrix(int size) {
+  if (size == 0) {
+    return std::vector<std::vector<int>>{};
+  }
+  InType matrix(size, std::vector<int>(size));
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<int> dist(1, 50000);
+
+  for (int i = 0; i < size; ++i) {
+    for (int j = 0; j < size; ++j) {
+      matrix[i][j] = dist(gen);
+    }
+  }
+
+  matrix[size / 2][size / 2] = 99999;
+
+  return matrix;
+}
 
 class KlimenkoVMaxMatrixElemsValFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
@@ -79,9 +101,9 @@ const std::array<TestType, 5> kTestParam = {std::make_tuple(7, "7x7"), std::make
                                             std::make_tuple(11, "11x11")};
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValMPI, InType>(
-                                               kTestParam, PPC_SETTINGS_moskaev_v_max_value_elem_matrix),
+                                               kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val),
                                            ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValSEQ, InType>(
-                                               kTestParam, PPC_SETTINGS_moskaev_v_max_value_elem_matrix));
+                                               kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

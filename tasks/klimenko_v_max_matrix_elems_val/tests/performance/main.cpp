@@ -18,7 +18,13 @@ class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<I
   InType input_data_;
 
   void SetUp() override {
-    input_data_ = GeneratePerfTestMatrix(kCount_);
+    input_data_.resize(kCount_);
+    int val = 1;
+    for (int i = 0; i < kCount_; i++) {
+      for (int j = 0; j < kCount_; j++) {
+        input_data_[i][j] = val++;
+      }
+    }
   }
 
   bool CheckTestOutputData(OutType &output_data) final {

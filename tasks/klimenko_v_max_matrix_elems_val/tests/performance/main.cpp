@@ -1,6 +1,11 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
+#include <chrono>
+#include <iostream>
+#include <random>
+#include <vector>
+
 #include "klimenko_v_max_matrix_elems_val/common/include/common.hpp"
 #include "klimenko_v_max_matrix_elems_val/mpi/include/ops_mpi.hpp"
 #include "klimenko_v_max_matrix_elems_val/seq/include/ops_seq.hpp"
@@ -19,7 +24,7 @@ static InType GeneratePerfTestMatrix(int size) {
     }
   }
 
-  matrix[size / 2][size / 2] = 90000;
+  matrix[size / 2][size / 2] = 10000;
 
   return matrix;
 }
@@ -53,12 +58,11 @@ const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 const auto kPerfTestName = KlimenkoVMaxMatrixElemsValPerfTests::CustomPerfTestName;
 
 INSTANTIATE_TEST_SUITE_P(MatrixTestsPerf, KlimenkoVMaxMatrixElemsValPerfTests, kGtestValues, kPerfTestName);
-}  // namespace klimenko_v_max_matrix_elems_val
 
-TEST(KlimenkoVMaxMatrixElemsValPerfTestsMPI, TestPipelineRun) {
-  int initialized = 0;
+TEST(KlimenkoVMaxMatrixElemsValMPI, TestPipelineRun) {
+  int initialized;
   MPI_Initialized(&initialized);
-  if (initialized == 0) {
+  if (!initialized) {
     MPI_Init(nullptr, nullptr);
   }
   int rank = 0;
@@ -84,10 +88,10 @@ TEST(KlimenkoVMaxMatrixElemsValPerfTestsMPI, TestPipelineRun) {
   }
 }
 
-TEST(KlimenkoVMaxMatrixElemsValPerfTestsMPI, TestTaskRun) {
-  int initialized = 0;
+TEST(KlimenkoVMaxMatrixElemsValMPI, TestTaskRun) {
+  int initialized;
   MPI_Initialized(&initialized);
-  if (initialized == 0) {
+  if (!initialized) {
     MPI_Init(nullptr, nullptr);
   }
   int rank = 0;
@@ -112,7 +116,7 @@ TEST(KlimenkoVMaxMatrixElemsValPerfTestsMPI, TestTaskRun) {
   }
 }
 
-TEST(KlimenkoVMaxMatrixElemsValPerfTestsSEQ, TestPipelineRun) {
+TEST(KlimenkoVMaxMatrixElemsValSEQ, TestPipelineRun) {
   auto matrix = GeneratePerfTestMatrix(5000);
   KlimenkoVMaxMatrixElemsValSEQ task(matrix);
 
@@ -130,7 +134,7 @@ TEST(KlimenkoVMaxMatrixElemsValPerfTestsSEQ, TestPipelineRun) {
   std::cout << "SEQ Pipeline time: " << duration.count() << "ms\n";
 }
 
-TEST(KlimenkoVMaxMatrixElemsValPerfTestsSEQ, TestTaskRun) {
+TEST(KlimenkoVMaxMatrixElemsValSEQ, TestTaskRun) {
   auto matrix = GeneratePerfTestMatrix(5000);
   KlimenkoVMaxMatrixElemsValSEQ task(matrix);
 
@@ -146,3 +150,4 @@ TEST(KlimenkoVMaxMatrixElemsValPerfTestsSEQ, TestTaskRun) {
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
   std::cout << "SEQ Task time: " << duration.count() << "ms\n";
 }
+}  // namespace klimenko_v_max_matrix_elems_val

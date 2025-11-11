@@ -15,11 +15,11 @@ KlimenkoVMaxMatrixElemsValSEQ::KlimenkoVMaxMatrixElemsValSEQ(const InType &in) {
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::ValidationImpl() {
-  return GetOutput() == 0;
+  return ((!GetInput().empty()) && (GetOutput() == 0));
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::PreProcessingImpl() {
-  return true;
+  return !GetInput().empty();
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::RunImpl() {
@@ -41,7 +41,7 @@ bool KlimenkoVMaxMatrixElemsValSEQ::RunImpl() {
 }
 
 bool KlimenkoVMaxMatrixElemsValSEQ::PostProcessingImpl() {
-  return true;
+  return !GetInput().empty();
 }
 
 }  // namespace klimenko_v_max_matrix_elems_val

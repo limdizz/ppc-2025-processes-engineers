@@ -17,56 +17,56 @@ KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::ValidationImpl() {
-  return GetOutput() == 0;
+  return ((!GetInput().empty()) && (GetOutput() == 0));
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
-  return true;
+  return !GetInput().empty();
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
-  const auto &matrix = GetInput();
-  int rank, size;
+  if (GetInput().empty()) {
+    return false;
+  }
+  int rank = 0;
+  int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = matrix.size();
-  MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (n == 0) {
-    if (rank == 0) {
-      GetOutput() = 0;
-    }
-    return true;
+  const auto &matrix = GetInput();
+  auto total_rows = matrix.size();
+
+  if (total_rows == 0) {
+    return false;
   }
-  int local_size = n / size;
-  int remainder = n % size;
-  int start_idx, end_idx;
-  if (rank < remainder) {
-    start_idx = rank * (local_size + 1);
-    end_idx = start_idx + local_size + 1;
-  } else {
-    start_idx = remainder * (local_size + 1) + (rank - remainder) * local_size;
-    end_idx = start_idx + local_size;
+
+  auto rows_per_process = total_rows / size;
+  auto remainder = total_rows % size;
+
+  size_t start_row = ((rank * rows_per_process) + (std::min(static_cast<size_t>(rank), remainder)));
+  size_t end_row = start_row + rows_per_process;
+  if (std::cmp_less(static_cast<size_t>(rank), remainder)) {
+    end_row += 1;
   }
+
   int local_max = INT_MIN;
-  for (int i = start_idx; i < end_idx && i < n; i++) {
-    for (size_t j = 0; j < matrix[i].size(); j++) {
-      if (matrix[i][j] > local_max) {
-        local_max = matrix[i][j];
-      }
+  for (size_t i = start_row; i < end_row; ++i) {
+    for (int element : matrix[i]) {
+      local_max = std::max(element, local_max);
     }
   }
-  if (local_size == 0 && rank >= n) {
-    local_max = INT_MIN;
-  }
-  int global_max;
+
+  int global_max = 0;
+
   MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
   GetOutput() = global_max;
+
   return true;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PostProcessingImpl() {
-  return true;
+  return !GetInput().empty();
 }
 
 }  // namespace klimenko_v_max_matrix_elems_val

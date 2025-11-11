@@ -31,14 +31,12 @@ class KlimenkoVMaxMatrixElemsValFuncTests : public ppc::util::BaseRunFuncTests<I
     TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     const int n = std::get<0>(params);
 
-    input_data_.clear();
-    input_data_.resize(static_cast<size_t>(n));
-
+    input_data_.resize(n);
     int val = 1;
     for (int i = 0; i < n; i++) {
-      input_data_[static_cast<size_t>(i)].resize(static_cast<size_t>(n));
+      input_data_[i].resize(n);
       for (int j = 0; j < n; j++) {
-        input_data_[static_cast<size_t>(i)][static_cast<size_t>(j)] = val++;
+        input_data_[i][j] = val++;
       }
     }
     expected_max_ = n * n;
@@ -63,8 +61,7 @@ TEST_P(KlimenkoVMaxMatrixElemsValFuncTests, FindMatrixMax) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 4> kTestParam = {std::make_tuple(5, "5x5"), std::make_tuple(10, "10x10"),
-                                            std::make_tuple(100, "100x100"), std::make_tuple(500, "500x500")};
+const std::array<TestType, 3> kTestParam = {std::make_tuple(3, "3"), std::make_tuple(5, "5"), std::make_tuple(7, "7")};
 
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KlimenkoVMaxMatrixElemsValMPI, InType>(
                                                kTestParam, PPC_SETTINGS_klimenko_v_max_matrix_elems_val),

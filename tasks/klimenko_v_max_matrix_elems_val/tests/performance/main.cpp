@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
 
 #include "klimenko_v_max_matrix_elems_val/common/include/common.hpp"
 #include "klimenko_v_max_matrix_elems_val/mpi/include/ops_mpi.hpp"

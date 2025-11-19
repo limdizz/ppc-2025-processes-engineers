@@ -1,5 +1,6 @@
 #include "klimenko_v_max_matrix_elems_val/seq/include/ops_seq.hpp"
 
+#include <algorithm>
 #include <climits>
 #include <vector>
 

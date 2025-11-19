@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <climits>
+#include <cstddef>
 
 #include "klimenko_v_max_matrix_elems_val/common/include/common.hpp"
 
@@ -50,7 +51,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   }
   int local_max = INT_MIN;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    for (int j = 0; j < matrix[i].size(); j++) {
+    for (size_t j = 0; j < matrix[i].size(); j++) {
       local_max = std::max(matrix[i][j], local_max);
     }
   }

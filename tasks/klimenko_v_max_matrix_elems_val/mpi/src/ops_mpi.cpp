@@ -30,7 +30,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = matrix.size();
+  std::size_t n = matrix.size();
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (n == 0) {
     if (rank == 0) {
@@ -40,25 +40,25 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   }
   int local_size = n / size;
   int remainder = n % size;
-  int start_idx;
-  int end_idx;
+  int start_idx = 0;
+  int end_idx = 0;
   if (rank < remainder) {
     start_idx = rank * (local_size + 1);
     end_idx = start_idx + local_size + 1;
   } else {
-    start_idx = remainder * (local_size + 1) + (rank - remainder) * local_size;
+    start_idx = (remainder * (local_size + 1)) + ((rank - remainder) * local_size);
     end_idx = start_idx + local_size;
   }
   int local_max = INT_MIN;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    for (size_t j = 0; j < matrix[i].size(); j++) {
-      local_max = std::max(matrix[i][j], local_max);
+    for (int j : matrix[i]) {
+      local_max = std::max(j, local_max);
     }
   }
   if (local_size == 0 && rank >= n) {
     local_max = INT_MIN;
   }
-  int global_max;
+  int global_max = 0;
   MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   GetOutput() = global_max;
   return true;

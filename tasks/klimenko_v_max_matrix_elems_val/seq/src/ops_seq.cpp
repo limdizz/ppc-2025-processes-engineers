@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "klimenko_v_max_matrix_elems_val/common/include/common.hpp"
-#include "util/include/util.hpp"
 
 namespace klimenko_v_max_matrix_elems_val {
 

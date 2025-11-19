@@ -9,20 +9,20 @@
 namespace klimenko_v_max_matrix_elems_val {
 
 class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int n = 15000;
+  const int n_ = 15000;
   InType input_data_;
   OutType expected_max_ = 0;
 
   void SetUp() override {
-    input_data_.resize(n);
+    input_data_.resize(n_);
     int val = 1;
-    for (int i = 0; i < n; i++) {
-      input_data_[i].resize(n);
-      for (int j = 0; j < n; j++) {
+    for (int i = 0; i < n_; i++) {
+      input_data_[i].resize(n_);
+      for (int j = 0; j < n_; j++) {
         input_data_[i][j] = val++;
       }
     }
-    expected_max_ = n * n;
+    expected_max_ = n_ * n_;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {

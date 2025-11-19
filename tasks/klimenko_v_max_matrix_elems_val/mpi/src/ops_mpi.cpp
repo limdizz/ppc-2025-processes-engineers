@@ -30,7 +30,7 @@ bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  std::size_t n = matrix.size();
+  int n = matrix.size();
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (n == 0) {
     if (rank == 0) {

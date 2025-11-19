@@ -1,11 +1,6 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
-#include <chrono>
-#include <iostream>
-#include <random>
-#include <vector>
-
 #include "klimenko_v_max_matrix_elems_val/common/include/common.hpp"
 #include "klimenko_v_max_matrix_elems_val/mpi/include/ops_mpi.hpp"
 #include "klimenko_v_max_matrix_elems_val/seq/include/ops_seq.hpp"
@@ -14,20 +9,20 @@
 namespace klimenko_v_max_matrix_elems_val {
 
 class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kCount = 15000;
+  const int n = 15000;
   InType input_data_;
   OutType expected_max_ = 0;
 
   void SetUp() override {
-    input_data_.resize(kCount);
+    input_data_.resize(n);
     int val = 1;
-    for (int i = 0; i < kCount; i++) {
-      input_data_[i].resize(kCount);
-      for (int j = 0; j < kCount; j++) {
+    for (int i = 0; i < n; i++) {
+      input_data_[i].resize(n);
+      for (int j = 0; j < n; j++) {
         input_data_[i][j] = val++;
       }
     }
-    expected_max_ = kCount * kCount;
+    expected_max_ = n * n;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {

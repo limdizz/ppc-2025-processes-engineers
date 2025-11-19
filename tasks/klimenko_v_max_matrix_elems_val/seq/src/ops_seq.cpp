@@ -26,7 +26,8 @@ bool KlimenkoVMaxMatrixElemsValSEQ::RunImpl() {
   const auto &matrix = GetInput();
 
   if (matrix.empty()) {
-    return false;
+    GetOutput() = 0;
+    return true;
   }
 
   int max_element = matrix[0][0];

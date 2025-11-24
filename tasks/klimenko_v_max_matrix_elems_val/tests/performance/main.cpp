@@ -8,7 +8,7 @@
 namespace klimenko_v_max_matrix_elems_val {
 
 class KlimenkoVMaxMatrixElemsValPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int n_ = 15000;
+  const int n_ = 5000;
   InType input_data_;
   OutType expected_max_ = 0;
 

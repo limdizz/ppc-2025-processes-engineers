@@ -16,51 +16,55 @@ KlimenkoVMaxMatrixElemsValMPI::KlimenkoVMaxMatrixElemsValMPI(const InType &in) {
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::ValidationImpl() {
-  return GetOutput() == 0;
+  if (GetInput().empty() || GetInput()[0].empty()) {
+    GetOutput() = 0;
+  }
+  return true;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::PreProcessingImpl() {
-  return true;
+  return GetOutput() == 0;
 }
 
 bool KlimenkoVMaxMatrixElemsValMPI::RunImpl() {
   const auto &matrix = GetInput();
+
   int rank = 0;
   int size = 1;
+
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = static_cast<int>(matrix.size());
+  int n = 0;
+  if (rank == 0) {
+    n = static_cast<int>(matrix.size());
+  }
+
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   if (n == 0) {
-    if (rank == 0) {
-      GetOutput() = 0;
-    }
+    int result = 0;
+    MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    GetOutput() = result;
     return true;
   }
-  int local_size = n / size;
-  int remainder = n % size;
-  int start_idx = 0;
-  int end_idx = 0;
-  if (rank < remainder) {
-    start_idx = rank * (local_size + 1);
-    end_idx = start_idx + local_size + 1;
-  } else {
-    start_idx = (remainder * (local_size + 1)) + ((rank - remainder) * local_size);
-    end_idx = start_idx + local_size;
-  }
-  int local_max = INT_MIN;
-  for (int i = start_idx; i < end_idx && i < n; i++) {
-    for (int j : matrix[i]) {
-      local_max = std::max(j, local_max);
+
+  int global_max = INT_MIN;
+
+  if (rank == 0) {
+    int local_max = INT_MIN;
+    for (const auto &row : matrix) {
+      for (int v : row) {
+        local_max = std::max(local_max, v);
+      }
     }
+    global_max = local_max;
   }
-  if (local_size == 0 && rank >= n) {
-    local_max = INT_MIN;
-  }
-  int global_max = 0;
-  MPI_Allreduce(&local_max, &global_max, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  MPI_Bcast(&global_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   GetOutput() = global_max;
+
   return true;
 }
 

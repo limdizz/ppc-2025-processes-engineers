@@ -8,7 +8,7 @@
 namespace klimenko_v_seidel_method {
 
 class KlimenkoVSeidelMethodPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kCount_ = 200;
+  const int kCount_ = 2000;
   InType input_data_{};
 
   void SetUp() override {

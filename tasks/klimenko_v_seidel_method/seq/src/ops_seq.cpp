@@ -29,10 +29,10 @@ bool KlimenkoVSeidelMethodSEQ::RunImpl() {
   }
 
   std::vector<double> x(n, 0.0);
-  std::vector<double> x_new(n, 0.0);
   std::vector<double> b(n, 1.0);
   std::vector<std::vector<double>> a(n, std::vector<double>(n, 0.0));
 
+  // A = Identity
   for (int i = 0; i < n; i++) {
     a[i][i] = 1.0;
   }
@@ -43,23 +43,24 @@ bool KlimenkoVSeidelMethodSEQ::RunImpl() {
   int iteration = 0;
 
   for (; iteration < max_iterations; iteration++) {
+    double diff = 0.0;
+
     for (int i = 0; i < n; i++) {
       double ax_i = 0.0;
+
       for (int j = 0; j < n; j++) {
         ax_i += a[i][j] * x[j];
       }
-      x_new[i] = x[i] - (tau * (ax_i - b[i]));
-    }
 
-    double diff = 0.0;
-    for (int i = 0; i < n; i++) {
-      double d = x_new[i] - x[i];
+      double old = x[i];
+
+      x[i] = x[i] - tau * (ax_i - b[i]);
+
+      double d = x[i] - old;
       diff += d * d;
     }
+
     diff = std::sqrt(diff);
-
-    x = x_new;
-
     if (diff < epsilon) {
       break;
     }

@@ -37,31 +37,36 @@ bool KlimenkoVSeidelMethodSEQ::RunImpl() {
     a[i][i] = 1.0;
   }
 
-  const double tau = 0.5;
   const double epsilon = 1e-6;
   const int max_iterations = 1000;
-  int iteration = 0;
 
-  for (; iteration < max_iterations; iteration++) {
-    double diff = 0.0;
+  for (int iteration = 0; iteration < max_iterations; iteration++) {
+    std::vector<double> x_old = x;
+    double max_diff = 0.0;
 
     for (int i = 0; i < n; i++) {
-      double ax_i = 0.0;
+      double sum = 0.0;
 
-      for (int j = 0; j < n; j++) {
-        ax_i += a[i][j] * x[j];
+      //
+      for (int j = 0; j < i; j++) {
+        sum += a[i][j] * x[j];
       }
 
-      double old = x[i];
+      for (int j = i + 1; j < n; j++) {
+        sum += a[i][j] * x_old[j];
+      }
 
-      x[i] = x[i] - tau * (ax_i - b[i]);
+      double x_new = (b[i] - sum) / a[i][i];
 
-      double d = x[i] - old;
-      diff += d * d;
+      double diff = std::abs(x_new - x[i]);
+      if (diff > max_diff) {
+        max_diff = diff;
+      }
+
+      x[i] = x_new;
     }
 
-    diff = std::sqrt(diff);
-    if (diff < epsilon) {
+    if (max_diff < epsilon) {
       break;
     }
   }

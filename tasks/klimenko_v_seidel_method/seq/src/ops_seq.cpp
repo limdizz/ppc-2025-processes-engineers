@@ -18,84 +18,111 @@ KlimenkoVSeidelMethodSEQ::KlimenkoVSeidelMethodSEQ(const InType &in) {
 }
 
 bool KlimenkoVSeidelMethodSEQ::ValidationImpl() {
-  return GetInput() > 0;
-}
-
-bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
-  return true;
-}
-
-bool KlimenkoVSeidelMethodSEQ::RunImpl() {
-  int n = GetInput();
+  n = GetInput();
   if (n <= 0) {
     return false;
   }
+  return true;
+}
 
-  // Оптимизация: используем одномерный массив для матрицы
-  std::vector<double> A(n * n, 0.0);
-  std::vector<double> b(n, 1.0);
-  std::vector<double> x(n, 0.0);
-  std::vector<double> x_old(n, 0.0);
+bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
+  if (!ValidationImpl()) {
+    return false;
+  }
 
-  // Инициализация матрицы A
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      if (i == j) {
-        A[i * n + j] = n + 1.0;  // диагональное преобладание
-      } else {
-        A[i * n + j] = 1.0;
-      }
+  n = GetInput();
+
+  generateRandomMatrix(n, A, b);
+
+  std::vector<double> x_exact(n, 1.0);
+  b.assign(n, 0.0);
+
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      b[i] += A[i][j] * x_exact[j];
     }
   }
 
-  const double epsilon = 1e-6;
-  const int max_iterations = 10000;
-  bool converge = false;
+  for (int i = 0; i < n; ++i) {
+    if (std::abs(A[i][i]) < 1e-12) {
+      return false;
+    }
+  }
+
+  epsilon = 1e-6;
+  max_iterations = 10000;
+  x.resize(n, 0.0);
+
   int iteration = 0;
 
-  while (!converge && iteration < max_iterations) {
-    // Сохраняем предыдущее приближение
-    std::copy(x.begin(), x.end(), x_old.begin());
+  while (iteration < max_iterations) {
+    double diff_sq = 0.0;
+    for (int i = 0; i < n; ++i) {
+      double old = x[i];
+      double sum_off_diag = 0.0;
 
-    // Одна итерация метода Зейделя
-    for (int i = 0; i < n; i++) {
-      double sum = 0.0;
-
-      // Используем уже обновленные значения для j < i
-      for (int j = 0; j < i; j++) {
-        sum += A[i * n + j] * x[j];
+      for (int j = 0; j < n; ++j) {
+        if (i != j) {
+          sum_off_diag += A[i][j] * x[j];
+        }
       }
 
-      // Используем старые значения для j > i
-      for (int j = i + 1; j < n; j++) {
-        sum += A[i * n + j] * x_old[j];
-      }
-
-      // Обновляем x[i]
-      x[i] = (b[i] - sum) / A[i * n + i];
+      x[i] = (b[i] - sum_off_diag) / A[i][i];
+      diff_sq += std::pow(x[i] - old, 2);
     }
 
-    // Проверка сходимости
-    double diff_norm = 0.0;
-    for (int i = 0; i < n; i++) {
-      double diff = x[i] - x_old[i];
-      diff_norm += diff * diff;
+    if (std::sqrt(diff_sq) < epsilon) {
+      break;
     }
-    diff_norm = std::sqrt(diff_norm);
 
-    converge = (diff_norm <= epsilon);
-    iteration++;
+    ++iteration;
   }
 
-  // Сумма решения
   double sum = std::accumulate(x.begin(), x.end(), 0.0);
   GetOutput() = static_cast<int>(std::round(sum));
 
   return true;
 }
 
+bool KlimenkoVSeidelMethodSEQ::RunImpl() {
+  return true;
+}
+
 bool KlimenkoVSeidelMethodSEQ::PostProcessingImpl() {
   return true;
+}
+
+bool KlimenkoVSeidelMethodSEQ::converge(const std::vector<double> &x_new) {
+  double residual_norm = 0.0;
+  for (int i = 0; i < n; ++i) {
+    double Ax_i = 0.0;
+    for (int j = 0; j < n; ++j) {
+      Ax_i += A[i][j] * x_new[j];
+    }
+    residual_norm += std::pow(Ax_i - b[i], 2);
+  }
+  return std::sqrt(residual_norm) < epsilon;
+}
+
+void KlimenkoVSeidelMethodSEQ::generateRandomMatrix(int size, std::vector<std::vector<double>> &matrix,
+                                                    std::vector<double> &vector) {
+  matrix.resize(size, std::vector<double>(size, 0.0));
+  vector.resize(size, 0.0);
+
+  std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+  for (int i = 0; i < size; ++i) {
+    double row_sum = 0.0;
+    for (int j = 0; j < size; ++j) {
+      if (i != j) {
+        matrix[i][j] = static_cast<double>(std::rand() % 10 + 1);
+        row_sum += std::abs(matrix[i][j]);
+      }
+    }
+
+    matrix[i][i] = row_sum + static_cast<double>(std::rand() % 5 + 1);
+    vector[i] = static_cast<double>(std::rand() % 20 + 1);
+  }
 }
 
 }  // namespace klimenko_v_seidel_method

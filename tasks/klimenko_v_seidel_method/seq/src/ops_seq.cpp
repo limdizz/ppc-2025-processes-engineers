@@ -26,12 +26,6 @@ bool KlimenkoVSeidelMethodSEQ::ValidationImpl() {
 }
 
 bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
-  if (!ValidationImpl()) {
-    return false;
-  }
-
-  n = GetInput();
-
   generateRandomMatrix(n, A, b);
 
   std::vector<double> x_exact(n, 1.0);
@@ -106,7 +100,10 @@ bool KlimenkoVSeidelMethodSEQ::converge(const std::vector<double> &x_new) {
 
 void KlimenkoVSeidelMethodSEQ::generateRandomMatrix(int size, std::vector<std::vector<double>> &matrix,
                                                     std::vector<double> &vector) {
-  matrix.resize(size, std::vector<double>(size, 0.0));
+  matrix.resize(size);
+  for (int i = 0; i < size; ++i) {
+    matrix[i].assign(size, 0.0);
+  }
   vector.resize(size, 0.0);
 
   std::srand(static_cast<unsigned>(std::time(nullptr)));
@@ -121,7 +118,7 @@ void KlimenkoVSeidelMethodSEQ::generateRandomMatrix(int size, std::vector<std::v
     }
 
     matrix[i][i] = row_sum + static_cast<double>(std::rand() % 5 + 1);
-    vector[i] = static_cast<double>(std::rand() % 20 + 1);
+    // vector[i] = static_cast<double>(std::rand() % 20 + 1);
   }
 }
 

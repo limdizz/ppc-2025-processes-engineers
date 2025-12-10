@@ -103,8 +103,16 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
       x[global_i] = (local_b[i] - sum_off_diag) / local_matrix[(size_t)i * n + global_i];
     }
 
-    MPI_Allgatherv(x.data() + start_row, local_rows, MPI_DOUBLE, x.data(), row_counts.data(), row_displs.data(),
-                   MPI_DOUBLE, MPI_COMM_WORLD);
+    std::vector<double> local_x_updated(local_rows);
+    for (int i = 0; i < local_rows; ++i) {
+      local_x_updated[i] = x[start_row + i];
+    }
+
+    // Заменяем проблемный вызов:
+    MPI_Allgatherv(local_x_updated.data(),  // <--- 1. Send Buffer: Временный буфер
+                   local_rows, MPI_DOUBLE,
+                   x.data(),  // <--- 2. Receive Buffer: Весь вектор X
+                   row_counts.data(), row_displs.data(), MPI_DOUBLE, MPI_COMM_WORLD);
 
     double local_diff = 0.0;
     for (int i = 0; i < local_rows; i++) {

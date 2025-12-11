@@ -37,10 +37,6 @@ bool KlimenkoVSeidelMethodMPI::PreProcessingImpl() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if (size < 1) {
-    return false;
-  }
-
   GetOutput() = 0;
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -49,9 +45,6 @@ bool KlimenkoVSeidelMethodMPI::PreProcessingImpl() {
 
 bool KlimenkoVSeidelMethodMPI::RunImpl() {
   int n = GetInput();
-  if (n <= 0) {
-    return false;
-  }
 
   int rank = 0;
   int size = 1;

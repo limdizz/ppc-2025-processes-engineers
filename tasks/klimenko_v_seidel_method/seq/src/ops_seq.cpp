@@ -23,6 +23,10 @@ bool KlimenkoVSeidelMethodSEQ::ValidationImpl() {
 }
 
 bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
+  return true;
+}
+
+bool KlimenkoVSeidelMethodSEQ::RunImpl() {
   GenerateRandomMatrix(n_, A_, b_);
 
   std::vector<double> x_exact(n_, 1.0);
@@ -42,16 +46,13 @@ bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
 
   epsilon_ = 1e-6;
   max_iterations_ = 10000;
-  x_.resize(n_, 0.0);
+  x_.assign(n_, 0.0);
 
-  return true;
-}
-
-bool KlimenkoVSeidelMethodSEQ::RunImpl() {
   int iteration = 0;
 
   while (iteration < max_iterations_) {
     double diff_sq = 0.0;
+
     for (int i = 0; i < n_; ++i) {
       double old = x_[i];
       double sum_off_diag = 0.0;

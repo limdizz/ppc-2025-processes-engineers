@@ -10,7 +10,7 @@
 
 namespace klimenko_v_seidel_method {
 
-KlimenkoVSeidelMethodSEQ::KlimenkoVSeidelMethodSEQ(const InType &in) : n_(0), epsilon_(0.0), max_iterations_(0) {
+KlimenkoVSeidelMethodSEQ::KlimenkoVSeidelMethodSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;

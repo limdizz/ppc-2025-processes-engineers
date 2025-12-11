@@ -26,18 +26,16 @@ bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
 }
 
 bool KlimenkoVSeidelMethodSEQ::RunImpl() {
-  // Генерация матрицы
+
   GenerateRandomMatrix(n_, A_, b_);
 
-  // Вычисление правой части
   ComputeRightHandSide(n_, A_, b_);
 
-  // Проверка диагональных элементов
+
   if (!CheckDiagonalElements(n_, A_)) {
     return false;
   }
 
-  // Инициализация параметров
   epsilon_ = 1e-6;
   max_iterations_ = 10000;
   x_.assign(n_, 0.0);
@@ -93,28 +91,28 @@ void KlimenkoVSeidelMethodSEQ::GenerateRandomMatrix(int size, std::vector<std::v
   }
 }
 
-void KlimenkoVSeidelMethodSEQ::ComputeRightHandSide(int n, const std::vector<std::vector<double>> &A,
+void KlimenkoVSeidelMethodSEQ::ComputeRightHandSide(int n, const std::vector<std::vector<double>> &a,
                                                     std::vector<double> &b) {
   std::vector<double> x_exact(n, 1.0);
   b.assign(n, 0.0);
 
   for (int i = 0; i < n; ++i) {
     for (int j = 0; j < n; ++j) {
-      b[i] += A[i][j] * x_exact[j];
+      b[i] += a[i][j] * x_exact[j];
     }
   }
 }
 
-bool KlimenkoVSeidelMethodSEQ::CheckDiagonalElements(int n, const std::vector<std::vector<double>> &A) {
+bool KlimenkoVSeidelMethodSEQ::CheckDiagonalElements(int n, const std::vector<std::vector<double>> &a) {
   for (int i = 0; i < n; ++i) {
-    if (std::abs(A[i][i]) < 1e-12) {
+    if (std::abs(a[i][i]) < 1e-12) {
       return false;
     }
   }
   return true;
 }
 
-double KlimenkoVSeidelMethodSEQ::PerformSeidelIteration(int n, const std::vector<std::vector<double>> &A,
+double KlimenkoVSeidelMethodSEQ::PerformSeidelIteration(int n, const std::vector<std::vector<double>> &a,
                                                         const std::vector<double> &b, std::vector<double> &x) {
   double diff_sq = 0.0;
 
@@ -124,11 +122,11 @@ double KlimenkoVSeidelMethodSEQ::PerformSeidelIteration(int n, const std::vector
 
     for (int j = 0; j < n; ++j) {
       if (i != j) {
-        sum_off_diag += A[i][j] * x[j];
+        sum_off_diag += a[i][j] * x[j];
       }
     }
 
-    x[i] = (b[i] - sum_off_diag) / A[i][i];
+    x[i] = (b[i] - sum_off_diag) / a[i][i];
     double diff = x[i] - old;
     diff_sq += diff * diff;
   }

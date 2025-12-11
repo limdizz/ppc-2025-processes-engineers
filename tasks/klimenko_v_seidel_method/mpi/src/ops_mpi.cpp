@@ -163,23 +163,23 @@ void KlimenkoVSeidelMethodMPI::InitializeMatrixAndVector(std::vector<double> &fl
 
     for (int j = 0; j < n; j++) {
       if (i == j) {
-        flat_matrix[static_cast<size_t>(i) * n + j] = static_cast<double>(dist_diag(gen));
+        flat_matrix[(static_cast<size_t>(i) * n) + j] = static_cast<double>(dist_diag(gen));
       } else {
         double val = dist_off_diag(gen);
-        flat_matrix[static_cast<size_t>(i) * n + j] = val;
+        flat_matrix[(static_cast<size_t>(i) * n) + j] = val;
         row_sum += std::abs(val);
       }
     }
 
-    if (std::abs(flat_matrix[static_cast<size_t>(i) * n + i]) < row_sum) {
-      flat_matrix[static_cast<size_t>(i) * n + i] = row_sum + 1.0;
+    if (std::abs(flat_matrix[(static_cast<size_t>(i) * n) + i]) < row_sum) {
+      flat_matrix[(static_cast<size_t>(i) * n) + i] = row_sum + 1.0;
     }
   }
 
   for (int i = 0; i < n; i++) {
     double sum = 0.0;
     for (int j = 0; j < n; j++) {
-      sum += flat_matrix[static_cast<size_t>(i) * n + j] * x_exact[j];
+      sum += flat_matrix[(static_cast<size_t>(i) * n) + j] * x_exact[j];
     }
     b[i] = sum;
   }

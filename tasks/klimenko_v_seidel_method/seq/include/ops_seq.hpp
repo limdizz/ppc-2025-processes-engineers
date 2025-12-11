@@ -23,9 +23,9 @@ class KlimenkoVSeidelMethodSEQ : public BaseTask {
   std::vector<std::vector<double>> A_;
   std::vector<double> b_;
   std::vector<double> x_;
-  int n_;
-  double epsilon_;
-  int max_iterations_;
+  int n_{0};
+  double epsilon_{0.0};
+  int max_iterations_{0};
 
   static void GenerateRandomMatrix(int size, std::vector<std::vector<double>> &matrix, std::vector<double> &vector);
 };

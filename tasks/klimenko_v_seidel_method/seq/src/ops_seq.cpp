@@ -18,7 +18,6 @@ KlimenkoVSeidelMethodSEQ::KlimenkoVSeidelMethodSEQ(const InType &in) {
 
 bool KlimenkoVSeidelMethodSEQ::ValidationImpl() {
   n_ = GetInput();
-
   return n_ > 0;
 }
 
@@ -27,53 +26,38 @@ bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
 }
 
 bool KlimenkoVSeidelMethodSEQ::RunImpl() {
+  // Генерация матрицы
   GenerateRandomMatrix(n_, A_, b_);
 
-  std::vector<double> x_exact(n_, 1.0);
-  b_.assign(n_, 0.0);
+  // Вычисление правой части
+  ComputeRightHandSide(n_, A_, b_);
 
-  for (int i = 0; i < n_; ++i) {
-    for (int j = 0; j < n_; ++j) {
-      b_[i] += A_[i][j] * x_exact[j];
-    }
+  // Проверка диагональных элементов
+  if (!CheckDiagonalElements(n_, A_)) {
+    return false;
   }
 
-  for (int i = 0; i < n_; ++i) {
-    if (std::abs(A_[i][i]) < 1e-12) {
-      return false;
-    }
-  }
-
+  // Инициализация параметров
   epsilon_ = 1e-6;
   max_iterations_ = 10000;
   x_.assign(n_, 0.0);
 
+  // Итерационный процесс
   int iteration = 0;
+  bool converged = false;
 
-  while (iteration < max_iterations_) {
-    double diff_sq = 0.0;
+  while (iteration < max_iterations_ && !converged) {
+    // Выполнение одной итерации метода Зейделя
+    double diff_sq = PerformSeidelIteration(n_, A_, b_, x_);
 
-    for (int i = 0; i < n_; ++i) {
-      double old = x_[i];
-      double sum_off_diag = 0.0;
-
-      for (int j = 0; j < n_; ++j) {
-        if (i != j) {
-          sum_off_diag += A_[i][j] * x_[j];
-        }
-      }
-
-      x_[i] = (b_[i] - sum_off_diag) / A_[i][i];
-      diff_sq += std::pow(x_[i] - old, 2);
-    }
-
-    if (std::sqrt(diff_sq) < epsilon_) {
-      break;
-    }
+    // Проверка сходимости
+    double diff_norm = std::sqrt(diff_sq);
+    converged = (diff_norm < epsilon_);
 
     ++iteration;
   }
 
+  // Вычисление результата
   double sum = std::accumulate(x_.begin(), x_.end(), 0.0);
   GetOutput() = static_cast<int>(std::round(sum));
   return true;
@@ -107,6 +91,49 @@ void KlimenkoVSeidelMethodSEQ::GenerateRandomMatrix(int size, std::vector<std::v
 
     matrix[i][i] = row_sum + static_cast<double>(dist_diag(gen));
   }
+}
+
+void KlimenkoVSeidelMethodSEQ::ComputeRightHandSide(int n, const std::vector<std::vector<double>> &A,
+                                                    std::vector<double> &b) {
+  std::vector<double> x_exact(n, 1.0);
+  b.assign(n, 0.0);
+
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      b[i] += A[i][j] * x_exact[j];
+    }
+  }
+}
+
+bool KlimenkoVSeidelMethodSEQ::CheckDiagonalElements(int n, const std::vector<std::vector<double>> &A) {
+  for (int i = 0; i < n; ++i) {
+    if (std::abs(A[i][i]) < 1e-12) {
+      return false;
+    }
+  }
+  return true;
+}
+
+double KlimenkoVSeidelMethodSEQ::PerformSeidelIteration(int n, const std::vector<std::vector<double>> &A,
+                                                        const std::vector<double> &b, std::vector<double> &x) {
+  double diff_sq = 0.0;
+
+  for (int i = 0; i < n; ++i) {
+    double old = x[i];
+    double sum_off_diag = 0.0;
+
+    for (int j = 0; j < n; ++j) {
+      if (i != j) {
+        sum_off_diag += A[i][j] * x[j];
+      }
+    }
+
+    x[i] = (b[i] - sum_off_diag) / A[i][i];
+    double diff = x[i] - old;
+    diff_sq += diff * diff;
+  }
+
+  return diff_sq;
 }
 
 }  // namespace klimenko_v_seidel_method

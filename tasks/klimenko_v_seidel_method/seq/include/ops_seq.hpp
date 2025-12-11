@@ -28,6 +28,10 @@ class KlimenkoVSeidelMethodSEQ : public BaseTask {
   int max_iterations_{0};
 
   static void GenerateRandomMatrix(int size, std::vector<std::vector<double>> &matrix, std::vector<double> &vector);
+  static double PerformSeidelIteration(int n, const std::vector<std::vector<double>> &A, const std::vector<double> &b,
+                                       std::vector<double> &x);
+  bool CheckDiagonalElements(int n, const std::vector<std::vector<double>> &A);
+  void ComputeRightHandSide(int n, const std::vector<std::vector<double>> &A, std::vector<double> &b);
 };
 
 }  // namespace klimenko_v_seidel_method

@@ -173,11 +173,38 @@ int KlimenkoVSeidelMethodMPI::computeFinalResult(const std::vector<double> &x, i
 
 void KlimenkoVSeidelMethodMPI::initializeMatrixAndVector(std::vector<double> &flat_matrix, std::vector<double> &b,
                                                          int n) {
+  std::srand(static_cast<unsigned>(time(nullptr)));
+
   flat_matrix.resize(static_cast<std::size_t>(n) * n, 0.0);
+  b.resize(n, 0.0);
+
+  std::vector<double> x_exact(n, 1.0);
+
   for (int i = 0; i < n; i++) {
-    flat_matrix[(static_cast<std::size_t>(i) * n) + i] = 1.0;
+    double row_sum = 0.0;
+
+    for (int j = 0; j < n; j++) {
+      if (i == j) {
+        flat_matrix[(static_cast<std::size_t>(i) * n) + j] = 10.0 + (std::rand() % 10);
+      } else {
+        double val = (std::rand() % 100) / 100.0;
+        flat_matrix[(static_cast<std::size_t>(i) * n) + j] = val;
+        row_sum += std::abs(val);
+      }
+    }
+
+    if (std::abs(flat_matrix[(static_cast<std::size_t>(i) * n) + i]) < row_sum) {
+      flat_matrix[(static_cast<std::size_t>(i) * n) + i] = row_sum + 1.0;
+    }
   }
-  b.resize(n, 1.0);
+
+  for (int i = 0; i < n; i++) {
+    double sum = 0.0;
+    for (int j = 0; j < n; j++) {
+      sum += flat_matrix[(static_cast<std::size_t>(i) * n) + j] * x_exact[j];
+    }
+    b[i] = sum;
+  }
 }
 
 }  // namespace klimenko_v_seidel_method

@@ -26,11 +26,9 @@ bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
 }
 
 bool KlimenkoVSeidelMethodSEQ::RunImpl() {
-
   GenerateRandomMatrix(n_, A_, b_);
 
   ComputeRightHandSide(n_, A_, b_);
-
 
   if (!CheckDiagonalElements(n_, A_)) {
     return false;

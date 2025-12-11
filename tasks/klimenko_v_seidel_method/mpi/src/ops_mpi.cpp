@@ -2,10 +2,10 @@
 
 #include <mpi.h>
 
-#include <algorithm>
 #include <climits>
 #include <cmath>
-#include <numeric>
+#include <cstddef>
+#include <random>
 #include <vector>
 
 #include "klimenko_v_seidel_method/common/include/common.hpp"
@@ -62,7 +62,7 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
   std::vector<int> row_displs(size);
   std::vector<int> matrix_counts(size);
   std::vector<int> matrix_displs(size);
-  computeRowDistribution(n, size, row_counts, row_displs, matrix_counts, matrix_displs);
+  ComputeRowDistribution(n, size, row_counts, row_displs, matrix_counts, matrix_displs);
 
   int local_rows = row_counts[rank];
   int start_row = row_displs[rank];
@@ -71,7 +71,7 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
   std::vector<double> b;
 
   if (rank == 0) {
-    initializeMatrixAndVector(flat_matrix, b, n);
+    InitializeMatrixAndVector(flat_matrix, b, n);
   }
 
   std::vector<double> local_matrix((size_t)local_rows * n, 0.0);
@@ -96,11 +96,11 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
       double sum_off_diag = 0.0;
       for (int j = 0; j < n; j++) {
         if (j != global_i) {
-          sum_off_diag += local_matrix[(size_t)i * n + j] * x[j];
+          sum_off_diag += local_matrix[static_cast<size_t>(i) * n + j] * x[j];
         }
       }
 
-      x[global_i] = (local_b[i] - sum_off_diag) / local_matrix[(size_t)i * n + global_i];
+      x[global_i] = (local_b[i] - sum_off_diag) / local_matrix[static_cast<size_t>(i) * n + global_i];
     }
 
     std::vector<double> local_x_updated(local_rows);
@@ -108,11 +108,8 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
       local_x_updated[i] = x[start_row + i];
     }
 
-    // Заменяем проблемный вызов:
-    MPI_Allgatherv(local_x_updated.data(),  // <--- 1. Send Buffer: Временный буфер
-                   local_rows, MPI_DOUBLE,
-                   x.data(),  // <--- 2. Receive Buffer: Весь вектор X
-                   row_counts.data(), row_displs.data(), MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgatherv(local_x_updated.data(), local_rows, MPI_DOUBLE, x.data(), row_counts.data(), row_displs.data(),
+                   MPI_DOUBLE, MPI_COMM_WORLD);
 
     double local_diff = 0.0;
     for (int i = 0; i < local_rows; i++) {
@@ -132,7 +129,7 @@ bool KlimenkoVSeidelMethodMPI::RunImpl() {
   }
 
   if (rank == 0) {
-    GetOutput() = computeFinalResult(x, n);
+    GetOutput() = ComputeFinalResult(x, n);
   }
 
   MPI_Bcast(&GetOutput(), 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -143,7 +140,7 @@ bool KlimenkoVSeidelMethodMPI::PostProcessingImpl() {
   return GetOutput() > 0;
 }
 
-void KlimenkoVSeidelMethodMPI::computeRowDistribution(int n, int size, std::vector<int> &row_counts,
+void KlimenkoVSeidelMethodMPI::ComputeRowDistribution(int n, int size, std::vector<int> &row_counts,
                                                       std::vector<int> &row_displs, std::vector<int> &matrix_counts,
                                                       std::vector<int> &matrix_displs) {
   int row_offset = 0;
@@ -163,7 +160,7 @@ void KlimenkoVSeidelMethodMPI::computeRowDistribution(int n, int size, std::vect
   }
 }
 
-int KlimenkoVSeidelMethodMPI::computeFinalResult(const std::vector<double> &x, int n) {
+int KlimenkoVSeidelMethodMPI::ComputeFinalResult(const std::vector<double> &x, int n) {
   double sum = 0.0;
   for (int i = 0; i < n; i++) {
     sum += x[i];
@@ -171,7 +168,7 @@ int KlimenkoVSeidelMethodMPI::computeFinalResult(const std::vector<double> &x, i
   return static_cast<int>(std::round(sum));
 }
 
-void KlimenkoVSeidelMethodMPI::initializeMatrixAndVector(std::vector<double> &flat_matrix, std::vector<double> &b,
+void KlimenkoVSeidelMethodMPI::InitializeMatrixAndVector(std::vector<double> &flat_matrix, std::vector<double> &b,
                                                          int n) {
   std::srand(static_cast<unsigned>(time(nullptr)));
 

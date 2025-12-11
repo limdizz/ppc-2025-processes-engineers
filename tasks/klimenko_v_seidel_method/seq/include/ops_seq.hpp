@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "klimenko_v_seidel_method/common/include/common.hpp"
 #include "task/include/task.hpp"
 
@@ -18,15 +20,14 @@ class KlimenkoVSeidelMethodSEQ : public BaseTask {
   bool PostProcessingImpl() override;
 
  private:
-  std::vector<std::vector<double>> A;
-  std::vector<double> b;
-  std::vector<double> x;
-  int n;
-  double epsilon;
-  int max_iterations;
+  std::vector<std::vector<double>> A_;
+  std::vector<double> b_;
+  std::vector<double> x_;
+  int n_;
+  double epsilon_;
+  int max_iterations_;
 
-  bool converge(const std::vector<double> &x_new);
-  void generateRandomMatrix(int size, std::vector<std::vector<double>> &matrix, std::vector<double> &vector);
+  void GenerateRandomMatrix(int size, std::vector<std::vector<double>> &matrix, std::vector<double> &vector);
 };
 
 }  // namespace klimenko_v_seidel_method

@@ -1,13 +1,12 @@
 #include "klimenko_v_seidel_method/seq/include/ops_seq.hpp"
 
-#include <algorithm>
 #include <climits>
-#include <cmath>  // для std::abs
+#include <cmath>
 #include <numeric>
+#include <random>
 #include <vector>
 
 #include "klimenko_v_seidel_method/common/include/common.hpp"
-#include "task/include/task.hpp"
 
 namespace klimenko_v_seidel_method {
 
@@ -15,37 +14,39 @@ KlimenkoVSeidelMethodSEQ::KlimenkoVSeidelMethodSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;
+
+  n_ = 0;
+  epsilon_ = 0.0;
+  max_iterations_ = 0;
 }
 
 bool KlimenkoVSeidelMethodSEQ::ValidationImpl() {
-  n = GetInput();
-  if (n <= 0) {
-    return false;
-  }
-  return true;
+  n_ = GetInput();
+
+  return n_ > 0;
 }
 
 bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
-  generateRandomMatrix(n, A, b);
+  GenerateRandomMatrix(n_, A_, b_);
 
-  std::vector<double> x_exact(n, 1.0);
-  b.assign(n, 0.0);
+  std::vector<double> x_exact(n_, 1.0);
+  b_.assign(n_, 0.0);
 
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) {
-      b[i] += A[i][j] * x_exact[j];
+  for (int i = 0; i < n_; ++i) {
+    for (int j = 0; j < n_; ++j) {
+      b_[i] += A_[i][j] * x_exact[j];
     }
   }
 
-  for (int i = 0; i < n; ++i) {
-    if (std::abs(A[i][i]) < 1e-12) {
+  for (int i = 0; i < n_; ++i) {
+    if (std::abs(A_[i][i]) < 1e-12) {
       return false;
     }
   }
 
-  epsilon = 1e-6;
-  max_iterations = 10000;
-  x.resize(n, 0.0);
+  epsilon_ = 1e-6;
+  max_iterations_ = 10000;
+  x_.resize(n_, 0.0);
 
   return true;
 }
@@ -53,30 +54,30 @@ bool KlimenkoVSeidelMethodSEQ::PreProcessingImpl() {
 bool KlimenkoVSeidelMethodSEQ::RunImpl() {
   int iteration = 0;
 
-  while (iteration < max_iterations) {
+  while (iteration < max_iterations_) {
     double diff_sq = 0.0;
-    for (int i = 0; i < n; ++i) {
-      double old = x[i];
+    for (int i = 0; i < n_; ++i) {
+      double old = x_[i];
       double sum_off_diag = 0.0;
 
-      for (int j = 0; j < n; ++j) {
+      for (int j = 0; j < n_; ++j) {
         if (i != j) {
-          sum_off_diag += A[i][j] * x[j];
+          sum_off_diag += A_[i][j] * x_[j];
         }
       }
 
-      x[i] = (b[i] - sum_off_diag) / A[i][i];
-      diff_sq += std::pow(x[i] - old, 2);
+      x_[i] = (b_[i] - sum_off_diag) / A_[i][i];
+      diff_sq += std::pow(x_[i] - old, 2);
     }
 
-    if (std::sqrt(diff_sq) < epsilon) {
+    if (std::sqrt(diff_sq) < epsilon_) {
       break;
     }
 
     ++iteration;
   }
 
-  double sum = std::accumulate(x.begin(), x.end(), 0.0);
+  double sum = std::accumulate(x_.begin(), x_.end(), 0.0);
   GetOutput() = static_cast<int>(std::round(sum));
   return true;
 }
@@ -85,7 +86,7 @@ bool KlimenkoVSeidelMethodSEQ::PostProcessingImpl() {
   return true;
 }
 
-void KlimenkoVSeidelMethodSEQ::generateRandomMatrix(int size, std::vector<std::vector<double>> &matrix,
+void KlimenkoVSeidelMethodSEQ::GenerateRandomMatrix(int size, std::vector<std::vector<double>> &matrix,
                                                     std::vector<double> &vector) {
   matrix.resize(size);
   for (int i = 0; i < size; ++i) {
@@ -93,19 +94,21 @@ void KlimenkoVSeidelMethodSEQ::generateRandomMatrix(int size, std::vector<std::v
   }
   vector.resize(size, 0.0);
 
-  std::srand(static_cast<unsigned>(std::time(nullptr)));
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dist(1, 10);
+  std::uniform_int_distribution<> dist_diag(1, 5);
 
   for (int i = 0; i < size; ++i) {
     double row_sum = 0.0;
     for (int j = 0; j < size; ++j) {
       if (i != j) {
-        matrix[i][j] = static_cast<double>(std::rand() % 10 + 1);
+        matrix[i][j] = static_cast<double>(dist(gen));
         row_sum += std::abs(matrix[i][j]);
       }
     }
 
-    matrix[i][i] = row_sum + static_cast<double>(std::rand() % 5 + 1);
-    // vector[i] = static_cast<double>(std::rand() % 20 + 1);
+    matrix[i][i] = row_sum + static_cast<double>(dist_diag(gen));
   }
 }
 
